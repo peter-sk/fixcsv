@@ -4,7 +4,7 @@ import json
 import sys
 from tqdm import tqdm
 
-from config import CAT_COLS, STR_COLS
+from config import CAT_COLS, DEBUG, STR_COLS
 
 def is_float(x):
     if x.endswith(".00"):
@@ -81,53 +81,72 @@ def is_cat(val, col):
         return False
     return val in CAT_COLS[col]
 
+# def guess_data_type(val, col):
+#     if is_str(col):
+#         types[col]['str'] += 1
+#     elif is_cat(val, col):
+#         types[col]['cat'] += 1
+#     elif is_date(val):
+#         types[col]['date'] += 1
+#     elif is_time(val):
+#         types[col]['time'] += 1
+#     elif is_int(val):
+#         types[col]['int'] += 1
+#     elif is_float(val):
+#         types[col]['float'] += 1
+#     elif is_missing(val):
+#         types[col]['missing'] += 1
+#     else:
+#         raise ValueError(f"unable to guess type of value {val} for column {col}")
 def guess_data_type(val, col):
     if is_str(col):
-        types[col]['str'] += 1
+        return 'str'
     elif is_cat(val, col):
-        types[col]['cat'] += 1
+        return 'cat'
     elif is_date(val):
-        types[col]['date'] += 1
+        return 'date'
     elif is_time(val):
-        types[col]['time'] += 1
+        return 'time'
     elif is_int(val):
-        types[col]['int'] += 1
+        return 'int'
     elif is_float(val):
-        types[col]['float'] += 1
+        return 'float'
     elif is_missing(val):
-        types[col]['missing'] += 1
+        return 'missing'
     else:
         raise ValueError(f"unable to guess type of value {val} for column {col}")
 
 if __name__ == "__main__":
     for arg in tqdm(sys.argv[1:], desc="Guessing types of columns"):
-        #print(arg)
+        if DEBUG:
+            print(arg)
         cols = defaultdict(list)
         with open(arg, "rt") as f:
             variants = json.load(f)
         for variant in variants:
             header = variant["header"]
-            #print(",".join(header))
+            if DEBUG:
+                print(",".join(header))
             for row in variant["fine"]:
                 for col, val in zip(header, row):
                     cols[col].append(val)
         types = defaultdict(lambda: defaultdict(lambda: 0))
         for col, vals in cols.items():
             for val in vals:
-                t = guess_data_type(val, col)
-        for col, type_counter in types.items():
-            if 'int' in type_counter and 'date' in type_counter and type_counter['int'] > type_counter['date']:
-                type_counter['date'] += type_counter['int']
-                del type_counter['int']
-            if 'int' in type_counter and 'float' in type_counter:
-                type_counter['float'] += type_counter['int']
-                del type_counter['int']
-            if 'float' in type_counter and 'missing' in type_counter:
-                type_counter['float'] += type_counter['missing']
-                del type_counter['missing']
-            if 'int' in type_counter and 'missing' in type_counter:
-                type_counter['int'] += type_counter['missing']
-                del type_counter['missing']
+                types[col][guess_data_type(val, col)] += 1
+        # for col, type_counter in types.items():
+        #     if 'int' in type_counter and 'date' in type_counter and type_counter['int'] > type_counter['date']:
+        #         type_counter['date'] += type_counter['int']
+        #         del type_counter['int']
+        #     if 'int' in type_counter and 'float' in type_counter:
+        #         type_counter['float'] += type_counter['int']
+        #         del type_counter['int']
+        #     if 'float' in type_counter and 'missing' in type_counter:
+        #         type_counter['float'] += type_counter['missing']
+        #         del type_counter['missing']
+        #     if 'int' in type_counter and 'missing' in type_counter:
+        #         type_counter['int'] += type_counter['missing']
+        #         del type_counter['missing']
         augmented = {
 #            "cols": cols,
             "types": types,

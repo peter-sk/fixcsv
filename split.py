@@ -39,7 +39,7 @@ def split(s, sep, quote='"'):
             assert(not part)
         else:
             part += c
-    return tuple(parts)
+    return tuple([part.strip() for part in parts])
 
 def stats(data):
     for file_type, variants in data.items():
@@ -71,7 +71,7 @@ if __name__ == "__main__":
                 sep = "\t"
                 quoted = False
                 with open(arg, "rt", encoding="latin1") as f:
-                    content = f.readlines()
+                    content = [c.strip() for c in f.readlines()]
                 break
             if len(parts) > 1 and parts[1] in MAGICS:
                 sep = parts[2]

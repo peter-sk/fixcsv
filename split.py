@@ -3,7 +3,7 @@ import json
 import sys
 from tqdm import tqdm
 
-from config import MAGICS, FILE_TYPES, guess_file_type
+from config import DEBUG, FILE_TYPES, MAGICS, guess_file_type
 
 def split(s, sep, quote='"'):
     orig = s
@@ -55,16 +55,19 @@ if __name__ == "__main__":
     for arg in tqdm(sys.argv[1:], desc="Extracting data"):
         file_ext = arg.split(".")[-1]
         if file_ext == "xls":
-            print(arg, file_type, file_ext, "SKIPPING")
+            if DEBUG:
+                print(arg, file_type, file_ext, "SKIPPING")
             continue
         file_type = arg.split("/")[-1].split("."+file_ext)[0].lower()
-        #print(arg, file_type, file_ext, end=' ')
+        if DEBUG:
+            print(arg, file_type, file_ext, end=' ')
         if file_type not in FILE_TYPES:
             file_type = guess_file_type(file_type)
         with open(arg, "rt", encoding="latin1") as f:
             content = [c.strip() for c in f.readlines()]
         skipped = 0
-        #print(len(content), end=' ')
+        if DEBUG:
+            print(len(content), end=' ')
         while content:
             parts = content[0].split('"')
             if len(parts) > 0 and any(parts[0].startswith(m) for m in MAGICS):
@@ -81,7 +84,8 @@ if __name__ == "__main__":
             skipped += 1
         else:
             assert(False)
-        #print(skipped, repr(sep), quoted, len(content), end=' ')
+        if DEBUG:
+            print(skipped, repr(sep), quoted, len(content), end=' ')
         assert(skipped in (0,2,3))
         header, rest = content[0], content[1:]
         hparts = split(header, sep)
@@ -91,17 +95,20 @@ if __name__ == "__main__":
             if error and sep != ',':
                 errors.append((arg, file_type, i, len(hparts), len(lparts)))
             data[file_type][hparts][error].append(lparts)
-        #print(f"DONE")
-    print(errors)
-    print("BEFORE DEDUPLICATION")
-    stats(data)
+        if DEBUG:
+            print(f"DONE")
+    if DEBUG:
+        print(errors)
+        print("BEFORE DEDUPLICATION")
+        stats(data)
     for file_type, variants in tqdm(data.items(), desc="Deduplicating data"):
         for header, rows in variants.items():
             for error in rows:
                 data[file_type][header][error] = list(set(rows[error]))
                 data[file_type][header][error].sort()
-    print("AFTER DEDUPLICATION")
-    stats(data)
+    if DEBUG:
+        print("AFTER DEDUPLICATION")
+        stats(data)
     for file_type, variants in tqdm(data.items(), desc="Saving data"):
         with open(f"data_splitted/{file_type}.json", "wt") as f:
             variants = [{"header": header, "broken": rows[True], "fine": rows[False]} for header, rows in variants.items()]

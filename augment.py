@@ -2,6 +2,7 @@ from collections import defaultdict
 from dateutil.parser import parse as date_parse
 import json
 import sys
+from tqdm import tqdm
 
 from config import CAT_COLS, STR_COLS
 
@@ -45,7 +46,7 @@ def is_time(x):
 
 def are_date(year, month, day):
     year, month, day = int(year), int(month), int(day)
-    if year < 1900 or year > 2100:
+    if year < 1800 or year > 2100:
         return False
     if month < 1 or month > 12:
         return False
@@ -80,37 +81,40 @@ def is_cat(val, col):
         return False
     return val in CAT_COLS[col]
 
+def guess_data_type(val, col):
+    if is_str(col):
+        types[col]['str'] += 1
+    elif is_cat(val, col):
+        types[col]['cat'] += 1
+    elif is_date(val):
+        types[col]['date'] += 1
+    elif is_time(val):
+        types[col]['time'] += 1
+    elif is_int(val):
+        types[col]['int'] += 1
+    elif is_float(val):
+        types[col]['float'] += 1
+    elif is_missing(val):
+        types[col]['missing'] += 1
+    else:
+        raise ValueError(f"unable to guess type of value {val} for column {col}")
+
 if __name__ == "__main__":
-    for arg in sys.argv[1:]:
-        print(arg)
+    for arg in tqdm(sys.argv[1:], desc="Guessing types of columns"):
+        #print(arg)
         cols = defaultdict(list)
         with open(arg, "rt") as f:
             variants = json.load(f)
         for variant in variants:
             header = variant["header"]
-            print(",".join(header))
+            #print(",".join(header))
             for row in variant["fine"]:
                 for col, val in zip(header, row):
                     cols[col].append(val)
         types = defaultdict(lambda: defaultdict(lambda: 0))
         for col, vals in cols.items():
             for val in vals:
-                if is_str(col):
-                    types[col]['str'] += 1
-                elif is_cat(val, col):
-                    types[col]['cat'] += 1
-                elif is_date(val):
-                    types[col]['date'] += 1
-                elif is_time(val):
-                    types[col]['time'] += 1
-                elif is_int(val):
-                    types[col]['int'] += 1
-                elif is_float(val):
-                    types[col]['float'] += 1
-                elif is_missing(val):
-                    types[col]['missing'] += 1
-                else:
-                    raise ValueError(f"unable to identify type of value {val} for column {col}")
+                t = guess_data_type(val, col)
         for col, type_counter in types.items():
             if 'int' in type_counter and 'date' in type_counter and type_counter['int'] > type_counter['date']:
                 type_counter['date'] += type_counter['int']
@@ -121,10 +125,13 @@ if __name__ == "__main__":
             if 'float' in type_counter and 'missing' in type_counter:
                 type_counter['float'] += type_counter['missing']
                 del type_counter['missing']
+            if 'int' in type_counter and 'missing' in type_counter:
+                type_counter['int'] += type_counter['missing']
+                del type_counter['missing']
         augmented = {
-            "cols": cols,
+#            "cols": cols,
             "types": types,
-            "variants": [variant["fine"] for variant in variants],
+            "variants": [{"header": variant["header"], "rows": variant["broken"]} for variant in variants],
         }
         with open(arg.replace("data_cleaned/", "data_augmented/"), "wt") as f:
             json.dump(augmented, f, indent=2)

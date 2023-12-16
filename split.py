@@ -103,6 +103,6 @@ if __name__ == "__main__":
     print("AFTER DEDUPLICATION")
     stats(data)
     for file_type, variants in tqdm(data.items(), desc="Saving data"):
-        with open(f"data/{file_type}.json", "wt") as f:
+        with open(f"data_splitted/{file_type}.json", "wt") as f:
             variants = [{"header": header, "broken": rows[True], "fine": rows[False]} for header, rows in variants.items()]
             json.dump(variants, f, indent=2)

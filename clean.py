@@ -26,5 +26,5 @@ if __name__ == "__main__":
                 variant["broken"].remove(b)
         print("AFTER DEDUPLICATION")
         stats(arg, variant, i)
-        with open(arg.replace("data/", "data_cleaned/"), "wt") as f:
+        with open(arg.replace("data_splitted/", "data_cleaned/"), "wt") as f:
             json.dump(data, f, indent=2)

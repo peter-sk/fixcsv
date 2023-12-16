@@ -27,7 +27,7 @@ def align(header, parts, row, types):
             return new_row
         except ValueError:
             pass
-    if len(parts) <= 1 or not 'float' in ts:
+    if t != 'int' or len(parts) <= 1 or not 'float' in ts:
         raise ValueError(f"could not parse {val} from {parts[:3]} for {col}")
     val = ','.join(parts[:2])
     if DEBUG:

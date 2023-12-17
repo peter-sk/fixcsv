@@ -61,7 +61,7 @@ if __name__ == "__main__":
         for variant in variants:
             header = variant["header"]
             fine_rows = list(variant["fine"])
-            broken_rows = [])
+            broken_rows = []
             for row in tqdm(variant["broken"], desc=f"Fixing rows for {arg}"):
                 if DEBUG:
                     print("-"*80)

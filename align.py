@@ -32,22 +32,21 @@ def align(header, parts, row, types, ranges, error):
     t, new_val = guess_data_type(val, col)
     if t == 'str' and col in CAT_COLS:
         raise RuntimeError(f"could not parse {val} from {parts[:3]} for {col}")
-    if t in ts:
-        try:
-            new_error = error+1 if oor(new_val, ranges[col][t]) else error
-            new_row = align(header[1:], parts[1:], row+(val,), types, ranges, error)
-            return new_row
-        except ValueError:
-            pass
-    if t != 'int' or len(parts) <= 1 or not 'float' in ts:
-        raise ValueError(f"could not parse {val} from {parts[:3]} for {col}")
-    val = ','.join(parts[:2])
-    if DEBUG:
-        print(f"guessing {val} for {col}")
-    t, new_val = guess_data_type(val, col)
+    if t == 'int' and len(parts) > 1 and 'float' in ts:
+        val2 = ','.join(parts[:2])
+        if DEBUG:
+            print(f"guessing {val2} for {col}")
+        t2, new_val2 = guess_data_type(val2, col)
+        if t2 in ts:
+            try:
+                new_error = error+1 if oor(new_val2, ranges[col][t2]) else error
+                new_row = align(header[1:], parts[2:], row+(val2,), types, ranges, new_error)
+                return new_row
+            except ValueError:
+                pass
     if t in ts:
         new_error = error+1 if oor(new_val, ranges[col][t]) else error
-        return align(header[1:], parts[2:], row+(val,), types, ranges, new_error)
+        return align(header[1:], parts[1:], row+(val,), types, ranges, new_error)
     if DEBUG:
         print(ts, t, col, parts[:3])
     raise ValueError(f"could not parse {val} from {parts[:3]} for {col}")
@@ -62,8 +61,8 @@ if __name__ == "__main__":
         for variant in variants:
             header = variant["header"]
             fine_rows = list(variant["fine"])
-            broken_rows = list(variant["broken"][10:])
-            for row in tqdm(variant["broken"][:10], desc=f"Fixing rows for {arg}"):
+            broken_rows = list(variant["broken"][10000:])
+            for row in tqdm(variant["broken"][:10000], desc=f"Fixing rows for {arg}"):
                 if DEBUG:
                     print("-"*80)
                     print(header)

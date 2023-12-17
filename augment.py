@@ -4,7 +4,7 @@ import json
 import sys
 from tqdm import tqdm
 
-from config import CAT_COLS, DEBUG, STR_COLS
+from config import CAT_COLS, DEBUG, EXTRA_RANGES, EXTRA_TYPES, STR_COLS
 
 def is_float(x):
     if x.endswith(".00"):
@@ -161,10 +161,13 @@ if __name__ == "__main__":
         for col, range in ranges.items():
             for t, vals in range.items():
                 ranges[col][t] = (min(vals), max(vals))
+        file_type = arg.split("/")[-1].split(".json")[0]
+        types.update(EXTRA_TYPES.get(file_type, {}))
+        ranges.update(EXTRA_RANGES.get(file_type, {}))
         augmented = {
             "types": types,
             "ranges": ranges,
-            "variants": [{"header": variant["header"], "rows": variant["broken"]} for variant in variants],
+            "variants": [{"header": variant["header"], "broken": variant["broken"], "fine": variant["fine"]} for variant in variants],
         }
         with open(arg.replace("data_cleaned/", "data_augmented/"), "wt") as f:
             json.dump(augmented, f, indent=2)

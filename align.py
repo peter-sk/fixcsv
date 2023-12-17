@@ -3,9 +3,20 @@ import sys
 from tqdm import tqdm
 
 from augment import guess_data_type
-from config import CAT_COLS, DEBUG
+from config import CAT_COLS, DEBUG, MAX_ERRORS, OOR_ALLOWANCE
 
-def align(header, parts, row, types):
+def oor(val, range):
+    if type(val).__name__ in ('int', 'float'):
+        width = range[1]-range[0]
+        left = range[0]-OOR_ALLOWANCE*width
+        right = range[1]+OOR_ALLOWANCE*width
+    else:
+        left, right = range
+    return not (left <= val <= right)
+
+def align(header, parts, row, types, ranges, error):
+    if error > MAX_ERRORS:
+        raise ValueError(f"too many errors")
     if not header:
         if parts:
             raise ValueError(f"unparsed values {parts}")
@@ -23,7 +34,8 @@ def align(header, parts, row, types):
         raise RuntimeError(f"could not parse {val} from {parts[:3]} for {col}")
     if t in ts:
         try:
-            new_row = align(header[1:], parts[1:], row+(val,), types)
+            new_error = error+1 if oor(new_val, ranges[col][t]) else error
+            new_row = align(header[1:], parts[1:], row+(val,), types, ranges, error)
             return new_row
         except ValueError:
             pass
@@ -34,7 +46,8 @@ def align(header, parts, row, types):
         print(f"guessing {val} for {col}")
     t, new_val = guess_data_type(val, col)
     if t in ts:
-        return align(header[1:], parts[2:], row+(val,), types)
+        new_error = error+1 if oor(new_val, ranges[col][t]) else error
+        return align(header[1:], parts[2:], row+(val,), types, ranges, new_error)
     if DEBUG:
         print(ts, t, col, parts[:3])
     raise ValueError(f"could not parse {val} from {parts[:3]} for {col}")
@@ -45,19 +58,25 @@ if __name__ == "__main__":
             print(arg)
         with open(arg, "rt") as f:
             augmented = json.load(f)
-        types, variants = augmented["types"], augmented["variants"]
+        types, ranges, variants = augmented["types"], augmented["ranges"], augmented["variants"]
         for variant in variants:
             header = variant["header"]
-            rows = []
-            for row in tqdm(variant["rows"], desc=f"Fixing rows for {arg}"):
+            fine_rows = list(variant["fine"])
+            broken_rows = list(variant["broken"][10:])
+            for row in tqdm(variant["broken"][:10], desc=f"Fixing rows for {arg}"):
                 if DEBUG:
                     print("-"*80)
                     print(header)
                     print(row)
-                rows.append(align(header, row, (), types))
-            assert(len(rows) == len(variant["rows"]))
-            assert(all(len(row) == len(header) for row in rows))
-            assert(all(len(row) != len(header) for row in variant["rows"]))
-            variant["rows"] = rows
+                try:
+                    fine_rows.append(align(header, row, (), types, ranges, 0))
+                except ValueError:
+                    print("ouch")
+                    broken_rows.append(row)
+            assert(len(broken_rows)+len(fine_rows) == len(variant["broken"])+len(variant["fine"]))
+            assert(all(len(row) == len(header) for row in fine_rows))
+            assert(all(len(row) != len(header) for row in broken_rows))
+            variant["fine"] = fine_rows
+            variant["broken"] = broken_rows
         with open(arg.replace("data_augmented/", "data_fixed/"), "wt") as f:
-            json.dump(variants, f, indent=2)
+            json.dump(augmented, f, indent=2)

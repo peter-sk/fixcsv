@@ -1,2 +1,2 @@
-* restrict branching by score-based pruning based on ranges
+* return list of row+error instead of one row
 * header merging with empty values for non-existant columns

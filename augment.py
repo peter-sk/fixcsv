@@ -1,5 +1,4 @@
 from collections import defaultdict
-from dateutil.parser import parse as date_parse
 import json
 import sys
 from tqdm import tqdm
@@ -71,11 +70,6 @@ def is_date(x):
     if are_date(x[-4:], x[2:4], x[:2]):
         return True, f"{x[-4:]}-{x[4:6]}-{x[:2]}"
     return False, None
-    try:
-        date_parse(x)
-        return True
-    except:
-        return False
 
 def is_str(col):
     return col in STR_COLS

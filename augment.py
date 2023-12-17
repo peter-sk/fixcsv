@@ -13,17 +13,17 @@ def is_float(x):
     if len(parts) > 2:
         return False
     try:
-        float('.'.join(parts))
-        return True
+        y = float('.'.join(parts))
+        return True, y
     except:
-        return False
+        return False, None
 
 def is_int(x):
     try:
-        int(x)
-        return True
+        y = int(x)
+        return True, y
     except:
-        return False
+        return False, None
 
 def is_missing(x):
     return x in (
@@ -34,15 +34,15 @@ def is_missing(x):
 def is_time(x):
     parts = x.split(":") if ":" in x else x.split(".")
     if len(parts) != 3 or any(not part.isnumeric() for part in parts):
-        return False
+        return False, None
     hours, minutes, seconds = int(parts[0]), int(parts[1]), int(parts[2])
     if hours < 0 or hours > 24:
-        return False
+        return False, None
     if minutes < 0 or minutes > 60:
-        return False
+        return False, None
     if seconds < 0 or seconds > 60:
-        return False
-    return True
+        return False, None
+    return True, ":".join(x)
 
 def are_date(year, month, day):
     year, month, day = int(year), int(month), int(day)
@@ -57,16 +57,20 @@ def are_date(year, month, day):
 def is_date(x):
     parts = x.split("-")
     if len(parts) == 3 and all(part.isnumeric() for part in parts):
-        return True
+        if are_date(*parts):
+            return True, f"{int(parts[0]):04d}-{int(parts[1]):02d}-{int(parts[2]):02d}"
+        if are_date(parts[2], parts[0], parts[1]):
+            return True, f"{int(parts[2]):04d}-{int(parts[1]):02d}-{int(parts[0]):02d}"
+        return False, None
     if not x.isnumeric():
-        return False
+        return False, None
     if len(x) != 8:
-        return False
+        return False, None
     if are_date(x[:4], x[4:6], x[6:]):
-        return True
+        return True, f"{x[:4]}-{x[4:6]}-{x[6:]}"
     if are_date(x[-4:], x[2:4], x[:2]):
-        return True
-    return False
+        return True, f"{x[-4:]}-{x[4:6]}-{x[:2]}"
+    return False, None
     try:
         date_parse(x)
         return True
@@ -100,19 +104,23 @@ def is_cat(val, col):
 #         raise ValueError(f"unable to guess type of value {val} for column {col}")
 def guess_data_type(val, col):
     if is_str(col):
-        return 'str'
-    elif is_cat(val, col):
-        return 'cat'
-    elif is_date(val):
-        return 'date'
-    elif is_time(val):
-        return 'time'
-    elif is_int(val):
-        return 'int'
-    elif is_float(val):
-        return 'float'
-    elif is_missing(val):
-        return 'missing'
+        return 'str', val
+    if is_cat(val, col):
+        return 'cat', val
+    res, new_val = is_date(val)
+    if res:
+        return 'date', new_val
+    res, new_val = is_time(val)
+    if res:
+        return 'time', new_val
+    res, new_val = is_int(val)
+    if res:
+        return 'int', new_val
+    res, new_val = is_float(val)
+    if res:
+        return 'float', new_val
+    if is_missing(val):
+        return 'missing', ''
     else:
         raise ValueError(f"unable to guess type of value {val} for column {col}")
 
@@ -131,9 +139,12 @@ if __name__ == "__main__":
                 for col, val in zip(header, row):
                     cols[col].append(val)
         types = defaultdict(lambda: defaultdict(lambda: 0))
+        ranges = defaultdict(lambda: defaultdict(list))
         for col, vals in cols.items():
             for val in vals:
-                types[col][guess_data_type(val, col)] += 1
+                t, new_val = guess_data_type(val, col)
+                types[col][t] += 1
+                ranges[col][t].append(new_val)
         # for col, type_counter in types.items():
         #     if 'int' in type_counter and 'date' in type_counter and type_counter['int'] > type_counter['date']:
         #         type_counter['date'] += type_counter['int']
@@ -147,9 +158,12 @@ if __name__ == "__main__":
         #     if 'int' in type_counter and 'missing' in type_counter:
         #         type_counter['int'] += type_counter['missing']
         #         del type_counter['missing']
+        for col, range in ranges.items():
+            for t, vals in range.items():
+                ranges[col][t] = (min(vals), max(vals))
         augmented = {
-#            "cols": cols,
             "types": types,
+            "ranges": ranges,
             "variants": [{"header": variant["header"], "rows": variant["broken"]} for variant in variants],
         }
         with open(arg.replace("data_cleaned/", "data_augmented/"), "wt") as f:

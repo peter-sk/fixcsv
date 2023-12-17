@@ -1,2 +1,2 @@
-* per header attempt at joining
-* header merging
+* restrict branching by score-based pruning based on ranges
+* header merging with empty values for non-existant columns

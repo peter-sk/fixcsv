@@ -18,7 +18,7 @@ def align(header, parts, row, types):
     if DEBUG:
         print(f"guessing {val} for {col}")
     ts = types[col]
-    t = guess_data_type(val, col)
+    t, new_val = guess_data_type(val, col)
     if t == 'str' and col in CAT_COLS:
         raise RuntimeError(f"could not parse {val} from {parts[:3]} for {col}")
     if t in ts:
@@ -32,7 +32,7 @@ def align(header, parts, row, types):
     val = ','.join(parts[:2])
     if DEBUG:
         print(f"guessing {val} for {col}")
-    t = guess_data_type(val, col)
+    t, new_val = guess_data_type(val, col)
     if t in ts:
         return align(header[1:], parts[2:], row+(val,), types)
     if DEBUG:

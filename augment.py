@@ -137,6 +137,8 @@ if __name__ == "__main__":
         for col, vals in cols.items():
             for val in vals:
                 t, new_val = guess_data_type(val, col)
+                if t == 'cat':
+                    ranges[col][t].extend(CAT_COLS[col])
                 types[col][t] += 1
                 ranges[col][t].append(new_val)
         # for col, type_counter in types.items():

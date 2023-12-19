@@ -5,4 +5,4 @@ python augment.py data_cleaned/* && \
 python align.py data_augmented/* && \
 python extract.py data_fixed/* && \
 python stats.py data_fixed/* && \
-wc -l data_extracte/*
+wc -l data_extracted/*

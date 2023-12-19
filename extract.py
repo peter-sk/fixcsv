@@ -46,7 +46,7 @@ if __name__ == "__main__":
             print(f"merged_header = {merged_header}")
         assert(len(merged_header) == len(set(merged_header)))
         assert(not any("\t" in h for h in merged_header))
-        new_rows = []
+        new_rows = {}
         for i, variant in enumerate(variants):
             if not MERGE:
                 new_rows.clear()
@@ -59,10 +59,10 @@ if __name__ == "__main__":
                     t, new_val = guess_data_type(val, col)
                     guessed_row.append(new_val)
                 row2val = dict(zip(header, guessed_row))
-                new_row = [row2val.get(h, '') for h in (merged_header if MERGE else header)]
+                new_row = tuple(row2val.get(h, '') for h in (merged_header if MERGE else header))
                 if DEBUG:
                     print(f"new_row = {new_row}")
-                new_rows.append(new_row)
+                new_rows[new_row] = None
             assert(not any("\t" in new_row for new_row in new_rows))
             if not MERGE:
                 with open(arg.replace("data_fixed/", "data_extracted/").replace(".json", f"-header-{i}.tsv"), "wt") as f:

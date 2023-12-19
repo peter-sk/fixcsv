@@ -3,7 +3,7 @@ import sys
 from tqdm import tqdm
 
 from augment import guess_data_type
-from config import CAT_COLS, DEBUG, MAX_ERRORS, OOR_ALLOWANCE, OOR_DEFAULT_WIDTH
+from config import DEBUG, MAX_ERRORS, OOR_ALLOWANCE, OOR_DEFAULT_WIDTH
 
 def oor(val, ranges, t, indent):
     if t == 'date':

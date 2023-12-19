@@ -15,8 +15,8 @@ def oor(val, ranges, t, indent):
             width = OOR_DEFAULT_WIDTH*range[0]
             if width == 0:
                 width = 1
-        left = range[0]-OOR_ALLOWANCE*width
-        right = range[1]+OOR_ALLOWANCE*width
+        left = range[0]-1-OOR_ALLOWANCE*width
+        right = range[1]+1+OOR_ALLOWANCE*width
     elif t == 'str':
         left = chr(ord(range[0][0])-1)+range[0][1:] if range[0] else range[0]
         right = chr(ord(range[1][0])+1)+range[1][1:] if range[1] else range[1]
@@ -56,9 +56,10 @@ def align(header, parts, row, types, ranges, error, indent=0):
             if DEBUG:
                 print(f"{indent*' '}{val2} has guessed type {t2} and new value {new_val2}")
             if t2 in ts:
-                new_error = error+1 if oor(new_val2, ranges[col], t2, indent) else error
+                is_oor2 = oor(new_val2, ranges[col], t2, indent)
+                new_error = error+1 if is_oor2 else error
                 if DEBUG:
-                    print(f"{indent*' '}oor is {oor(new_val2, ranges[col], t2, indent)} for col {col}, new_val {new_val2}, range {ranges[col]}, and type {t2}")
+                    print(f"{indent*' '}oor is {is_oor2} for col {col}, new_val {new_val2}, range {ranges[col]}, and type {t2}")
                 new_row = align(header[1:], parts[2:], row+(val2,), types, ranges, new_error, indent=indent+2)
                 return new_row
         except ValueError as e:
@@ -71,9 +72,14 @@ def align(header, parts, row, types, ranges, error, indent=0):
         t = 'float'
         new_val = float(new_val)
     if t in ts:
-        new_error = error+1 if oor(new_val, ranges[col], t, indent) else error
+        is_oor = oor(new_val, ranges[col], t, indent)
+        if is_oor and t == 'int' and 'float' in ts:
+            new_val = float(new_val)
+            t = 'float'
+            is_oor = oor(new_val, ranges[col], t, indent)
+        new_error = error+1 if is_oor else error
         if DEBUG:
-            print(f"{indent*' '}oor is {oor(new_val, ranges[col], t, indent)} for col {col}, new_val {new_val}, range {ranges[col]}, and type {t}")
+            print(f"{indent*' '}oor is {is_oor} for col {col}, new_val {new_val}, range {ranges[col]}, and type {t}")
         return align(header[1:], parts[1:], row+(val,), types, ranges, new_error, indent=indent+2)
     if DEBUG:
         print(f"{indent*' '}{ts} {t} {col} {parts[:3]}")

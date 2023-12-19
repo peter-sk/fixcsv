@@ -13,6 +13,8 @@ def oor(val, ranges, t, indent):
         width = range[1]-range[0]
         if width == 0:
             width = OOR_DEFAULT_WIDTH*range[0]
+            if width == 0:
+                width = 1
         left = range[0]-OOR_ALLOWANCE*width
         right = range[1]+OOR_ALLOWANCE*width
     elif t == 'str':
@@ -65,6 +67,9 @@ def align(header, parts, row, types, ranges, error, indent=0):
             pass
         if DEBUG:
             print(f"{indent*' '}back to {val} for {col} with type {t} and new_val {new_val}")
+    if t == 'int' and t not in ts and 'float' in ts:
+        t = 'float'
+        new_val = float(new_val)
     if t in ts:
         new_error = error+1 if oor(new_val, ranges[col], t, indent) else error
         if DEBUG:

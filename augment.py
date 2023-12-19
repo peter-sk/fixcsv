@@ -41,7 +41,7 @@ def is_time(x):
         return False, None
     if seconds < 0 or seconds > 60:
         return False, None
-    return True, ":".join(x)
+    return True, f"{hours:0>2}:{minutes:0>2}:{seconds:0>2}"
 
 def are_date(year, month, day):
     year, month, day = int(year), int(month), int(day)

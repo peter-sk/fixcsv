@@ -63,10 +63,10 @@ if __name__ == "__main__":
                 with open(arg.replace("data_fixed/", "data_extracted/").replace(".json", f"-header-{i}.tsv"), "wt") as f:
                     print("\t".join(header), file=f)
                     for new_row in new_rows:
-                        print("\t".join(new_row), file=f)
+                        print("\t".join(repr(val) for val in new_row), file=f)
         if MERGE:
             with open(arg.replace("data_fixed/", "data_extracted/").replace(".json", ".tsv"), "wt") as f:
                 print("\t".join(merged_header), file=f)
                 for new_row in new_rows:
-                    print("\t".join(new_row), file=f)
+                    print("\t".join(repr(val) for val in new_row), file=f)
 

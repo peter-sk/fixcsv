@@ -45,8 +45,6 @@ def align(header, parts, row, types, ranges, error, indent=0):
     t, new_val = guess_data_type(val, col)
     if DEBUG:
         print(f"{indent*' '}{val} has guessed type {t} and new value {new_val}")
-    if t == 'str' and col in CAT_COLS:
-        raise RuntimeError(f"could not parse {val} from {parts[:3]} for {col}")
     if t == 'int' and len(parts) > 1 and 'float' in ts:
         val2 = ','.join(parts[:2])
         if DEBUG:
@@ -104,8 +102,8 @@ if __name__ == "__main__":
                     print(list(enumerate([types[col] for col in header])))
                 try:
                     fine_rows.append(align(header, row, (), types, ranges, 0))
-                except ValueError:
-                    print("ouch")
+                except ValueError as e:
+                    print(f"failed due to {e}")
                     broken_rows.append(row)
             assert(len(broken_rows)+len(fine_rows) == len(variant["broken"])+len(variant["fine"]))
             assert(all(len(row) == len(header) for row in fine_rows))

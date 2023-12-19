@@ -2,6 +2,7 @@ import json
 import sys
 from tqdm import tqdm
 
+from augment import guess_data_type
 from config import DEBUG, MERGE
 
 def merge(h1, h2, m):
@@ -53,7 +54,11 @@ if __name__ == "__main__":
             fine_rows = list(variant["fine"])
             for row in tqdm(fine_rows, desc=f"Extracting rows for {arg}"):
                 assert(len(header) == len(row))
-                row2val = dict(zip(header, row))
+                guessed_row = []
+                for col, val in zip(header, row):
+                    t, new_val = guess_data_type(val, col)
+                    guessed_row.append(new_val)
+                row2val = dict(zip(header, guessed_row))
                 new_row = [row2val.get(h, '') for h in (merged_header if MERGE else header)]
                 if DEBUG:
                     print(f"new_row = {new_row}")

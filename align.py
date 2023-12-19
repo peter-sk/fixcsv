@@ -58,7 +58,7 @@ def align(header, parts, row, types, ranges, error, indent=0):
                 new_error = error+1 if is_oor2 else error
                 if DEBUG:
                     print(f"{indent*' '}oor is {is_oor2} for col {col}, new_val {new_val2}, range {ranges[col]}, and type {t2}")
-                new_row = align(header[1:], parts[2:], row+(new_val2,), types, ranges, new_error, indent=indent+2)
+                new_row = align(header[1:], parts[2:], row+(val2,), types, ranges, new_error, indent=indent+2)
                 return new_row
         except ValueError as e:
             if DEBUG:
@@ -78,7 +78,7 @@ def align(header, parts, row, types, ranges, error, indent=0):
         new_error = error+1 if is_oor else error
         if DEBUG:
             print(f"{indent*' '}oor is {is_oor} for col {col}, new_val {new_val}, range {ranges[col]}, and type {t}")
-        return align(header[1:], parts[1:], row+(new_val,), types, ranges, new_error, indent=indent+2)
+        return align(header[1:], parts[1:], row+(val,), types, ranges, new_error, indent=indent+2)
     if DEBUG:
         print(f"{indent*' '}{ts} {t} {col} {parts[:3]}")
     raise ValueError(f"could not parse {val} from {parts[:3]} for {col}")
